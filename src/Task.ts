@@ -30,16 +30,19 @@ export interface ITaskProcess<P, R> {
 
 export interface ITask<P, R> extends EventEmmiter {
   name: string;
-  state: TaskState;
-  params: P
-  process: ITaskProcess<P, R>;
-  result: R;
+  // state: TaskState;
+  // params: P
+  // process: ITaskProcess<P, R>;
+  // result: R;
   dependencies: ITask<any, any>[];
   initialization(graph: ITaskGraph): void;
-  setState(state: TaskState): void;
+  // setState(state: TaskState): void;
   assertState(state: TaskState, error?: Error): void;
   run(): Promise<void>;
+  getResult(): R;
   checkDependencyStates(): void;
+  isFailed(): boolean;
+  isSucceed(): boolean;
 }
 
 export class Task<P, R> extends EventEmmiter implements ITask<P, R> {
@@ -79,7 +82,7 @@ export class Task<P, R> extends EventEmmiter implements ITask<P, R> {
   }
 
   async run() {
-    if (this.isErrored()) return;
+    if (this.isFailed()) return;
     this.assertState(TaskState.Ready);
     this.setState(TaskState.Running);
     try {
@@ -104,14 +107,18 @@ export class Task<P, R> extends EventEmmiter implements ITask<P, R> {
     }
   }
 
-  isErrored() {
+  isFailed() {
     return this.state === TaskState.Error;
   }
 
+  isSucceed() {
+    return this.state === TaskState.Done;
+  }
+
   checkDependencyStates() {
-    if (this.isErrored()) return;
+    if (this.isFailed()) return;
     this.assertState(TaskState.Initialized);
-    if (this.dependencies.every((task) => task.state === TaskState.Done)) {
+    if (this.dependencies.every((task) => task.isSucceed())) {
       try {
         this.params = this.process.paramBuilder(this.dependencies);
         this.setState(TaskState.Ready);

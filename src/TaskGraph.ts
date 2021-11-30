@@ -40,9 +40,7 @@ export class TaskGraph extends EventEmmiter implements ITaskGraph {
     if (this.taskMap[task.name]) {
       throw new Error("!panic: duplicate task name");
     }
-    if (task.state !== TaskState.Created) {
-      throw new Error(`!panic: task[${task.name}] has initialzed before add into graph`);
-    }
+    task.assertState(TaskState.Created, new Error(`!panic: task[${task.name}] has initialzed before add into graph`));
     this.taskMap[task.name] = task;
     this.mainTask.addDependency(task);
     return this;
