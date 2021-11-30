@@ -19,7 +19,7 @@ export enum TaskEvent {
   Error = 'error',
 }
 
-interface TaskProcessFunc<P, R> {
+export interface TaskProcessFunc<P, R> {
   (task: P): Promise<R>;
 }
 
@@ -42,11 +42,12 @@ export class Task<P, R> extends EventEmmiter {
     super();
     this.name = name;
     this.process = process;
+    this.dependencies = [];
     this.setState(TaskState.Created);
   }
 
   initialization(graph: TaskGraph) {
-    this.assertState(TaskState.Created, new Error(`!panic: task[${name}] has initialzed before empower`));
+    this.assertState(TaskState.Created, new Error(`!panic: task[${this.name}] has initialzed before empower`));
     this.graph = graph;
     this.setState(TaskState.Initialized);
   }
@@ -65,7 +66,7 @@ export class Task<P, R> extends EventEmmiter {
 
   async run() {
     if (this.isErrored()) return;
-    this.assertState(TaskState.Initialized);
+    this.assertState(TaskState.Ready);
     this.setState(TaskState.Running);
     try {
       this.result = await this.process.run(this.params);

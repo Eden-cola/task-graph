@@ -16,15 +16,19 @@ export class TaskGraph extends EventEmmiter {
   taskQueue: TaskQueue;
   mainTask: Task<void, void>;
 
-  constructor(queue: TaskQueue) {
+  constructor() {
     super();
     this.taskMap = {};
-    this.taskQueue = queue;
     this.mainTask = new Task('main', new EmptyProcess());
     this.mainTask.on(TaskEvent.Ready, () => {
       this.emit('done');
     })
   }
+
+  setQueue(queue: TaskQueue) {
+    this.taskQueue = queue;
+  }
+
   addTask(task: Task<any, any>) {
     if (this.taskMap[task.name]) {
       throw new Error("!panic: duplicate task name");
@@ -53,6 +57,9 @@ export class TaskGraph extends EventEmmiter {
   start() {
     for (const name in this.taskMap) {
       const task = this.taskMap[name];
+      task.on(TaskEvent.Ready, () => {
+        this.taskQueue.push(task);
+      });
       task.checkDependencyStates();
     }
   }
