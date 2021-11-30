@@ -1,5 +1,5 @@
 import EventEmmiter from 'events';
-import { TaskGraph } from './TaskGraph';
+import { ITaskGraph } from './TaskGraph';
 
 export enum TaskState {
   Created = 0,
@@ -24,19 +24,33 @@ export interface TaskProcessFunc<P, R> {
 }
 
 export interface ITaskProcess<P, R> {
-  paramBuilder: (dependencies: Task<any, any>[]) => P,
+  paramBuilder: (dependencies: ITask<any, any>[]) => P,
   run: TaskProcessFunc<P, R>,
 }
 
-export class Task<P, R> extends EventEmmiter {
+export interface ITask<P, R> extends EventEmmiter {
   name: string;
   state: TaskState;
   params: P
   process: ITaskProcess<P, R>;
   result: R;
-  dependencies: Task<any, any>[];
+  dependencies: ITask<any, any>[];
+  initialization(graph: ITaskGraph): void;
+  setState(state: TaskState): void;
+  assertState(state: TaskState, error?: Error): void;
+  run(): Promise<void>;
+  checkDependencyStates(): void;
+}
 
-  graph: TaskGraph;
+export class Task<P, R> extends EventEmmiter implements ITask<P, R> {
+  name: string;
+  state: TaskState;
+  params: P
+  process: ITaskProcess<P, R>;
+  result: R;
+  dependencies: ITask<any, any>[];
+
+  graph: ITaskGraph;
 
   constructor (name: string, process: ITaskProcess<P, R>) {
     super();
@@ -46,7 +60,7 @@ export class Task<P, R> extends EventEmmiter {
     this.setState(TaskState.Created);
   }
 
-  initialization(graph: TaskGraph) {
+  initialization(graph: ITaskGraph) {
     this.assertState(TaskState.Created, new Error(`!panic: task[${this.name}] has initialzed before empower`));
     this.graph = graph;
     this.setState(TaskState.Initialized);
@@ -107,7 +121,7 @@ export class Task<P, R> extends EventEmmiter {
     }
   }
 
-  addDependency(task: Task<any, any>) {
+  addDependency(task: ITask<any, any>) {
     task.assertState(TaskState.Created, new Error('!panic: try add an initialized dependency'));
     this.assertState(TaskState.Created, new Error('!panic: try add dependency after initial'));
     task.on(TaskEvent.Done, () => {

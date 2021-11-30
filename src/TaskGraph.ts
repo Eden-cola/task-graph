@@ -1,19 +1,26 @@
 import EventEmmiter from 'events';
-import { ITaskProcess, Task, TaskEvent, TaskState } from './Task';
-import { TaskQueue } from './TaskQueue';
+import { ITask, ITaskProcess, Task, TaskEvent, TaskState } from './Task';
+import { ITaskQueue } from './TaskQueue';
 
 class EmptyProcess implements ITaskProcess<void,void> {
   async run() {};
-  paramBuilder(_dependencies: Task<any, any>[]) {
+  paramBuilder(_dependencies: ITask<any, any>[]) {
     return;
   };
 }
 
-export class TaskGraph extends EventEmmiter {
+export interface ITaskGraph extends EventEmmiter {
+  setQueue(queue: ITaskQueue): void;
+  addTask(task: ITask<any, any>): void;
+  empower(): void;
+  start(): void;
+}
+
+export class TaskGraph extends EventEmmiter implements ITaskGraph {
   taskMap: {
-    [name: string]: Task<any, any>
+    [name: string]: ITask<any, any>
   };
-  taskQueue: TaskQueue;
+  taskQueue: ITaskQueue;
   mainTask: Task<void, void>;
 
   constructor() {
@@ -25,11 +32,11 @@ export class TaskGraph extends EventEmmiter {
     })
   }
 
-  setQueue(queue: TaskQueue) {
+  setQueue(queue: ITaskQueue) {
     this.taskQueue = queue;
   }
 
-  addTask(task: Task<any, any>) {
+  addTask(task: ITask<any, any>) {
     if (this.taskMap[task.name]) {
       throw new Error("!panic: duplicate task name");
     }
@@ -64,7 +71,7 @@ export class TaskGraph extends EventEmmiter {
     }
   }
   
-  check(tasks: Task<any, any>[], states: {
+  check(tasks: ITask<any, any>[], states: {
     [name: string]: 1|2, //1: 检查中，2：未发现环
   }) {
     for (const task of tasks) {

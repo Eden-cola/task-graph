@@ -1,8 +1,12 @@
 import EventEmmiter from 'events';
-import { Task } from './Task';
+import { ITask } from './Task';
 
-export class TaskQueue extends EventEmmiter{
-  queue: Task<any, any>[];
+export interface ITaskQueue extends EventEmmiter {
+  push(task: ITask<any, any>):void;
+}
+
+export class TaskQueue extends EventEmmiter implements ITaskQueue {
+  queue: ITask<any, any>[];
   concurrency: number;
   running: number
   workers: {
@@ -19,7 +23,7 @@ export class TaskQueue extends EventEmmiter{
     this.workers = {};
   }
 
-  push(task: Task<any, any>) {
+  push(task: ITask<any, any>) {
     this.queue.push(task);
     this.load();
   }

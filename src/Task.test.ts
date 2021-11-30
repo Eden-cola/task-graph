@@ -1,8 +1,8 @@
-import { ITaskProcess, Task, TaskEvent, TaskProcessFunc, TaskState } from './Task';
+import { ITask, ITaskProcess, Task, TaskEvent, TaskProcessFunc, TaskState } from './Task';
 import { TaskGraph } from './TaskGraph';
 
 class TestTaskProcess implements ITaskProcess<number, number> {
-  paramBuilder: (dependencies: Task<any, any>[]) => number;
+  paramBuilder: (dependencies: ITask<any, any>[]) => number;
   run: TaskProcessFunc<number, number>;
   constructor({ builder, run }) {
     this.paramBuilder = builder;
