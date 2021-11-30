@@ -1,0 +1,29 @@
+{
+  "name": "moka-task-graph",
+  "version": "0.0.1",
+  "description": "基于DAG图的并发任务调度系统",
+  "main": "lib/index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "task",
+    "graph",
+    "dag"
+  ],
+  "author": "zhangyuxuan",
+  "license": "MIT",
+  "dependencies": {
+    "eslint": "^8.3.0",
+    "eslint-plugin-jest": "^25.3.0",
+    "jest": "^27.3.1",
+    "jest-cli": "^27.3.1",
+    "ts-jest": "^27.0.7",
+    "ts-loader": "^9.2.6",
+    "ts-node": "^10.4.0",
+    "typescript": "^4.5.2"
+  },
+  "devDependencies": {
+    "@types/node": "^16.11.10"
+  }
+}
