@@ -1,16 +1,21 @@
 import EventEmmiter from 'events';
-import { ITask } from './Task';
+
+interface IRunnable {
+  run(): Promise<void>;
+}
 
 export interface ITaskQueue extends EventEmmiter {
-  push(task: ITask<any, any>):void;
+  push(task: IRunnable):void;
 }
 
 export class TaskQueue extends EventEmmiter implements ITaskQueue {
-  queue: ITask<any, any>[];
+  queue: IRunnable[];
   concurrency: number;
-  running: number
+  // running: number
+  startTaskCount: number;
+  endTaskCount: number;
   workers: {
-    [name: string]: Promise<void>;
+    [id: number]: Promise<void>;
   }
   constructor(concurrency: number) {
     super();
@@ -18,27 +23,33 @@ export class TaskQueue extends EventEmmiter implements ITaskQueue {
       throw new Error("WTF concurency?");
     }
     this.concurrency = concurrency;
-    this.running = 0;
+    this.startTaskCount = 0;
+    this.endTaskCount = 0;
     this.queue = [];
     this.workers = {};
   }
 
-  push(task: ITask<any, any>) {
+  push(task: IRunnable) {
     this.queue.push(task);
     this.load();
   }
 
+  running() {
+    return this.startTaskCount - this.endTaskCount;
+  }
+
   load() {
-    if (this.running < this.concurrency) {
+    if (this.running() < this.concurrency) {
       const task = this.queue.shift();
-      this.running += 1;
-      this.workers[task.name] = task.run()
+      this.startTaskCount += 1;
+      const id = this.startTaskCount;
+      this.workers[id] = task.run()
       .catch((err) => {
         this.emit('task-error', err);
       })
       .finally(() => {
-        delete this.workers[task.name];
-        this.running -= 1;
+        delete this.workers[id];
+        this.endTaskCount += 1;
         this.load();
       });
     }

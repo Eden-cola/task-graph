@@ -4,7 +4,8 @@
   "description": "基于DAG图的并发任务调度系统",
   "main": "lib/index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "build": "tsc",
+    "test": "jest"
   },
   "keywords": [
     "task",
