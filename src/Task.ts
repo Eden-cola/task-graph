@@ -35,6 +35,7 @@ export interface ITask<P, R> extends EventEmmiter {
   // process: ITaskProcess<P, R>;
   // result: R;
   dependencies: ITask<any, any>[];
+  followers: ITask<any, any>[];
   initialization(graph: ITaskGraph): void;
   // setState(state: TaskState): void;
   assertState(state: TaskState, error?: Error): void;
@@ -43,6 +44,9 @@ export interface ITask<P, R> extends EventEmmiter {
   checkDependencyStates(): void;
   isFailed(): boolean;
   isSucceed(): boolean;
+  isReady(): boolean;
+  addDependency(task: ITask<any, any>): void;
+  addFollower(task: ITask<any, any>): void;
 }
 
 export class Task<P, R> extends EventEmmiter implements ITask<P, R> {
@@ -52,6 +56,8 @@ export class Task<P, R> extends EventEmmiter implements ITask<P, R> {
   process: ITaskProcess<P, R>;
   result: R;
   dependencies: ITask<any, any>[];
+  followers: ITask<any, any>[];
+  error: Error;
 
   graph: ITaskGraph;
 
@@ -60,6 +66,7 @@ export class Task<P, R> extends EventEmmiter implements ITask<P, R> {
     this.name = name;
     this.process = process;
     this.dependencies = [];
+    this.followers = [];
     this.setState(TaskState.Created);
   }
 
@@ -67,6 +74,13 @@ export class Task<P, R> extends EventEmmiter implements ITask<P, R> {
     this.assertState(TaskState.Created, new Error(`!panic: task[${this.name}] has initialzed before empower`));
     this.graph = graph;
     this.setState(TaskState.Initialized);
+  }
+
+  setError(err) {
+    this.setState(TaskState.Error, err);
+    delete this.params;
+    delete this.result;
+    this.error = err;
   }
 
   setState(state: TaskState, payload?: any) {
@@ -89,7 +103,7 @@ export class Task<P, R> extends EventEmmiter implements ITask<P, R> {
       this.result = await this.process.run(this.params);
       this.setState(TaskState.Done);
     } catch (err) {
-      this.setState(TaskState.Error, err);
+      this.setError(err);
     }
   }
 
@@ -115,6 +129,10 @@ export class Task<P, R> extends EventEmmiter implements ITask<P, R> {
     return this.state === TaskState.Done;
   }
 
+  isReady() {
+    return this.state === TaskState.Ready;
+  }
+
   checkDependencyStates() {
     if (this.isFailed()) return;
     this.assertState(TaskState.Initialized);
@@ -123,7 +141,7 @@ export class Task<P, R> extends EventEmmiter implements ITask<P, R> {
         this.params = this.process.paramBuilder(this.dependencies);
         this.setState(TaskState.Ready);
       } catch (err) {
-        this.setState(TaskState.Error, err);
+        this.setError(err);
       }
     }
   }
@@ -135,9 +153,22 @@ export class Task<P, R> extends EventEmmiter implements ITask<P, R> {
       this.checkDependencyStates();
     });
     task.on(TaskEvent.Error, (error) => {
-      this.setState(TaskState.Error, error);
+      this.setError(error);
     });
     this.dependencies.push(task);
+    task.addFollower(this);
   }
 
+  checkFollowerStates() {
+    this.assertState(TaskState.Done);
+    if (this.followers.every((task) => task.isReady())) {
+      delete this.result;
+    }
+  }
+
+  addFollower(task: ITask<any, any>) {
+    task.on(TaskEvent.Ready, () => {
+      this.checkDependencyStates();
+    });
+  }
 }

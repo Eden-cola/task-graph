@@ -22,6 +22,16 @@ class TestTask extends EventEmitter implements ITask<number, number> {
     this.on(TaskEvent.Done, () => isSucceed.mockReturnValue(true));
     this.on(TaskEvent.Error, () => isFailed.mockReturnValue(true));
   }
+  followers: ITask<any, any>[];
+  isReady(): boolean {
+    return true;
+  }
+  addDependency(task: ITask<any, any>): void {
+    return ;
+  }
+  addFollower(task: ITask<any, any>): void {
+    return ;
+  }
   initialization(graph: ITaskGraph): void {
     return;
   }
