@@ -20,11 +20,11 @@ export enum TaskEvent {
 }
 
 export interface TaskProcessFunc<P, R> {
-  (task: P): Promise<R>;
+  (params?: P): Promise<R>;
 }
 
 export interface ITaskProcess<P, R> {
-  paramBuilder: (dependencies: ITask<any, any>[]) => P,
+  paramBuilder?: (dependencyMap: { [name:string]: ITask<any, any> }) => P,
   run: TaskProcessFunc<P, R>,
 }
 
@@ -84,6 +84,7 @@ export class Task<P, R> extends EventEmmiter implements ITask<P, R> {
   }
 
   setState(state: TaskState, payload?: any) {
+    this.state = state;
     this.emit(({
       [TaskState.Created]: TaskEvent.Created,
       [TaskState.Initialized]: TaskEvent.Initialized,
@@ -92,7 +93,6 @@ export class Task<P, R> extends EventEmmiter implements ITask<P, R> {
       [TaskState.Done]: TaskEvent.Done,
       [TaskState.Error]: TaskEvent.Error,
     })[state], payload);
-    this.state = state;
   }
 
   async run() {
@@ -100,7 +100,11 @@ export class Task<P, R> extends EventEmmiter implements ITask<P, R> {
     this.assertState(TaskState.Ready);
     this.setState(TaskState.Running);
     try {
-      this.result = await this.process.run(this.params);
+      if (this.params) {
+        this.result = await this.process.run(this.params);
+      } else {
+        this.result = await this.process.run();
+      }
       this.setState(TaskState.Done);
     } catch (err) {
       this.setError(err);
@@ -138,7 +142,11 @@ export class Task<P, R> extends EventEmmiter implements ITask<P, R> {
     this.assertState(TaskState.Initialized);
     if (this.dependencies.every((task) => task.isSucceed())) {
       try {
-        this.params = this.process.paramBuilder(this.dependencies);
+        if (this.process.paramBuilder) {
+          const map = {};
+          this.dependencies.forEach(task => map[task.name] = task);
+          this.params = this.process.paramBuilder(map);
+        }
         this.setState(TaskState.Ready);
       } catch (err) {
         this.setError(err);
@@ -168,7 +176,8 @@ export class Task<P, R> extends EventEmmiter implements ITask<P, R> {
 
   addFollower(task: ITask<any, any>) {
     task.on(TaskEvent.Ready, () => {
-      this.checkDependencyStates();
+      this.checkFollowerStates();
     });
+    this.followers.push(task);
   }
 }

@@ -64,6 +64,9 @@ class TestTaskQueue extends EventEmitter implements ITaskQueue {
     task.run();
     return;
   }
+  start() {
+    return;
+  }
 }
 
 describe('TaskGraph', () => {

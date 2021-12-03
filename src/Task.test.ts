@@ -2,7 +2,7 @@ import { ITask, ITaskProcess, Task, TaskEvent, TaskProcessFunc, TaskState } from
 import { TaskGraph } from './TaskGraph';
 
 class TestTaskProcess implements ITaskProcess<number, number> {
-  paramBuilder: (dependencies: ITask<any, any>[]) => number;
+  paramBuilder: (dependencyMap: { [name: string]: ITask<any, any>; }) => number;
   run: TaskProcessFunc<number, number>;
   constructor({ builder, run }) {
     this.paramBuilder = builder;
@@ -31,7 +31,7 @@ describe('Task', () => {
     task.assertState(TaskState.Initialized);
     task.checkDependencyStates();
     task.assertState(TaskState.Ready);
-    expect(process.paramBuilder).lastCalledWith([]);
+    expect(process.paramBuilder).lastCalledWith({});
     expect(task.params).toEqual(randNumber);
     await task.run();
     expect(process.run).lastCalledWith(randNumber);

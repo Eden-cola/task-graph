@@ -5,6 +5,12 @@ type IAnyTask = ITask<any, any>;
 
 export interface ITaskQueue extends EventEmmiter {
   push(task: IAnyTask):void;
+  start():void;
+}
+
+enum TaskQueueState {
+  Initialized = 1,
+  Running = 2,
 }
 
 export class TaskQueue extends EventEmmiter implements ITaskQueue {
@@ -16,6 +22,7 @@ export class TaskQueue extends EventEmmiter implements ITaskQueue {
   workers: {
     [id: number]: Promise<void>;
   }
+  state: TaskQueueState
   constructor(concurrency: number) {
     super();
     if (concurrency <= 1) {
@@ -26,10 +33,16 @@ export class TaskQueue extends EventEmmiter implements ITaskQueue {
     this.endTaskCount = 0;
     this.queue = [];
     this.workers = {};
+    this.state = TaskQueueState.Initialized;
   }
 
   push(task: IAnyTask) {
     this.queue.push(task);
+    this.load();
+  }
+
+  start() {
+    this.state = TaskQueueState.Running;
     this.load();
   }
 
@@ -45,6 +58,9 @@ export class TaskQueue extends EventEmmiter implements ITaskQueue {
   }
 
   load() {
+    if (this.state === TaskQueueState.Initialized) {
+      return;
+    }
     if (this.running() < this.concurrency) {
       const task = this.take();
       if (task === null) return;
@@ -54,7 +70,7 @@ export class TaskQueue extends EventEmmiter implements ITaskQueue {
       .catch((err) => {
         this.emit('task-error', err);
       })
-      .finally(() => {
+      .then(() => {
         delete this.workers[id];
         this.endTaskCount += 1;
         this.load();

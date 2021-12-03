@@ -4,16 +4,17 @@ import { ITaskQueue } from './TaskQueue';
 
 class EmptyProcess implements ITaskProcess<void,void> {
   async run() {};
-  paramBuilder(_dependencies: ITask<any, any>[]) {
+  paramBuilder(map: {}) {
     return;
   };
 }
 
 export interface ITaskGraph extends EventEmmiter {
-  setQueue(queue: ITaskQueue): void;
-  addTask(task: ITask<any, any>): void;
-  empower(): void;
-  start(): void;
+  setQueue(queue: ITaskQueue): this;
+  addTask(task: ITask<any, any>): this;
+  getTask(name: string): ITask<any, any>;
+  empower(): this;
+  start(): this;
 }
 
 export class TaskGraph extends EventEmmiter implements ITaskGraph {
@@ -29,21 +30,26 @@ export class TaskGraph extends EventEmmiter implements ITaskGraph {
     this.mainTask = new Task('main', new EmptyProcess());
     this.mainTask.on(TaskEvent.Ready, () => {
       this.emit('done');
-    })
+    });
   }
 
   setQueue(queue: ITaskQueue) {
     this.taskQueue = queue;
+    return this;
   }
 
   addTask(task: ITask<any, any>) {
     if (this.taskMap[task.name]) {
-      throw new Error("!panic: duplicate task name");
+      throw new Error(`!panic: duplicate task name${task.name}`);
     }
     task.assertState(TaskState.Created, new Error(`!panic: task[${task.name}] has initialzed before add into graph`));
     this.taskMap[task.name] = task;
     this.mainTask.addDependency(task);
     return this;
+  }
+
+  getTask(name: string) {
+    return this.taskMap[name];
   }
 
   empower() {
@@ -67,6 +73,8 @@ export class TaskGraph extends EventEmmiter implements ITaskGraph {
       });
       task.checkDependencyStates();
     }
+    this.taskQueue.start();
+    return this;
   }
   
   check(tasks: ITask<any, any>[], states: {
