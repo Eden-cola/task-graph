@@ -1,10 +1,11 @@
 {
   "name": "moka-task-graph",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "基于DAG图的并发任务调度系统",
   "main": "lib/index.js",
   "scripts": {
     "build": "tsc",
+    "example": "npx ts-node examples/example.ts",
     "test": "jest"
   },
   "keywords": [
