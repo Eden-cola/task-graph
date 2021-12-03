@@ -1,6 +1,8 @@
-import { TaskGraph } from "../src/TaskGraph";
-import { TaskGraphBuilder } from "../src/TaskGraphBuilder";
-import { TaskQueue } from "../src/TaskQueue";
+import {
+  TaskGraph,
+  TaskGraphBuilder,
+  TaskQueue,
+} from "../lib/index";
 
 const ACCESS_TOKEN = 'hey jude';
 
