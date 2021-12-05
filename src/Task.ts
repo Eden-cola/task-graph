@@ -30,7 +30,7 @@ export interface ITaskProcess<P, R> {
 
 export interface ITask<P, R> extends EventEmmiter {
   name: string;
-  // state: TaskState;
+  state: TaskState;
   // params: P
   // process: ITaskProcess<P, R>;
   // result: R;

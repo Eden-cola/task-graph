@@ -10,6 +10,9 @@ class EmptyProcess implements ITaskProcess<void,void> {
 }
 
 export interface ITaskGraph extends EventEmmiter {
+  taskMap: {
+    [name: string]: ITask<any, any>
+  };
   setQueue(queue: ITaskQueue): this;
   addTask(task: ITask<any, any>): this;
   getTask(name: string): ITask<any, any>;
