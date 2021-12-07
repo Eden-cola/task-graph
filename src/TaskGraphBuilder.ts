@@ -12,6 +12,37 @@ export class TaskGraphBuilder {
     this.graph = graph
   }
 
+  add({
+    name, process, task, dependencies,
+  }: {
+    name?: string,
+    process?: ITaskProcess<any, any>,
+    task?: ITask<any, any>,
+    dependencies?: string[],
+  }) {
+    let flag = false;
+    if(name && process) {
+      this.addTaskProcess(name, process);
+      flag = true;
+    }
+    if (task) {
+      this.addTask(task)
+      flag = true;
+    }
+    if (dependencies) {
+      if (task) {
+        this.addDependencies(task.name, dependencies);
+        flag = true;
+      } else if (name) {
+        this.addDependencies(name, dependencies);
+        flag = true;
+      }
+    }
+    if (!flag) {
+      throw new Error('method "add" is called but nothing happened');
+    }
+  }
+
   addTaskProcess(name: string, process: ITaskProcess<any, any>, dependencies?: string[]) {
     return this.addTask(new Task(name, process), dependencies);
   }
