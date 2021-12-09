@@ -22,15 +22,14 @@ export class TaskGraph extends EventEmmiter implements ITaskGraph {
     [name: string]: ITask<any, any>
   };
   taskQueue: ITaskQueue;
-  mainTask: Task<void, void>;
+  doneCount: number;
+  errorCount: number;
 
   constructor() {
     super();
     this.taskMap = {};
-    this.mainTask = new Task('main', new EmptyProcess());
-    this.mainTask.on(TaskEvent.Ready, () => {
-      this.emit('done');
-    });
+    this.doneCount = 0;
+    this.errorCount = 0;
   }
 
   setQueue(queue: ITaskQueue) {
@@ -44,9 +43,29 @@ export class TaskGraph extends EventEmmiter implements ITaskGraph {
     }
     task.assertState(TaskState.Created, new Error(`!panic: task[${task.name}] has initialzed before add into graph`));
     this.taskMap[task.name] = task;
-    this.mainTask.addDependency(task);
+    this.bindTask(task);
     return this;
   }
+
+  bindTask(task: ITask<any, any>) {
+    task.on(TaskEvent.Ready, () => {
+      this.taskQueue.push(task);
+    });
+    task.on(TaskEvent.Done, () => {
+      this.doneCount += 1;
+      this.emitIfAllTaskOver();
+    });
+    task.on(TaskEvent.Error, () => {
+      this.errorCount += 1;
+      this.emitIfAllTaskOver();
+    });
+  }
+
+  emitIfAllTaskOver() {
+    if (this.doneCount + this.errorCount === Object.keys(this.taskMap).length) {
+      this.emit('done');
+    }
+  };
 
   getTask(name: string) {
     return this.taskMap[name];
@@ -60,7 +79,6 @@ export class TaskGraph extends EventEmmiter implements ITaskGraph {
         throw new Error(`!panic: task[${name}] has a dependency out of the graph`);
       }
     }
-    this.mainTask.initialization(this);
     this.check(Object.values(this.taskMap), {});
     return this;
   }
@@ -68,10 +86,9 @@ export class TaskGraph extends EventEmmiter implements ITaskGraph {
   start() {
     for (const name in this.taskMap) {
       const task = this.taskMap[name];
-      task.on(TaskEvent.Ready, () => {
-        this.taskQueue.push(task);
-      });
-      task.checkDependencyStates();
+      if (task.dependencies.length === 0) {
+        task.checkDependencyStates();
+      }
     }
     this.taskQueue.start();
     return this;

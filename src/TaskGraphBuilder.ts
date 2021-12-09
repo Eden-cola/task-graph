@@ -1,6 +1,13 @@
 import { ITask, ITaskProcess, Task } from "./Task";
 import { ITaskGraph } from "./TaskGraph";
 
+type Buildable = {
+  name?: string,
+  process?: ITaskProcess<any, any>,
+  task?: ITask<any, any>,
+  dependencies?: string[],
+}
+
 export class TaskGraphBuilder {
   graph: ITaskGraph;
   dependencyMap: {
@@ -12,14 +19,15 @@ export class TaskGraphBuilder {
     this.graph = graph
   }
 
-  add({
-    name, process, task, dependencies,
-  }: {
-    name?: string,
-    process?: ITaskProcess<any, any>,
-    task?: ITask<any, any>,
-    dependencies?: string[],
-  }) {
+  add(item: Buildable|Buildable[]) {
+    if (Array.isArray(item)) {
+      item.forEach(_item => this.add(item));
+      return;
+    }
+
+    const {
+      name, process, task, dependencies,
+    } = item;
     let flag = false;
     if(name && process) {
       this.addTaskProcess(name, process);

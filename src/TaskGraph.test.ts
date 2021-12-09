@@ -82,13 +82,12 @@ describe('TaskGraph', () => {
     graph.setQueue(queue);
     graph.addTask(task1);
     graph.addTask(task2);
-    expect(graph.mainTask.dependencies).toEqual([task1, task2]);
     graph.empower();
     expect(task1.initialization).lastCalledWith(graph);
     expect(task2.initialization).lastCalledWith(graph);
     graph.start();
     expect(task1.checkDependencyStates).toBeCalledTimes(1);
-    expect(task2.checkDependencyStates).toBeCalledTimes(1);
+    expect(task2.checkDependencyStates).toBeCalledTimes(0);
     task1.emit(TaskEvent.Ready);
     expect(queue.push).lastCalledWith(task1);
     task1.emit(TaskEvent.Done);
