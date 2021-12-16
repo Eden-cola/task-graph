@@ -21,7 +21,7 @@ export class TaskGraphBuilder {
 
   add(item: Buildable|Buildable[]) {
     if (Array.isArray(item)) {
-      item.forEach(_item => this.add(item));
+      item.forEach(_item => this.add(_item));
       return;
     }
 

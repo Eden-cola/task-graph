@@ -102,6 +102,7 @@ export class Task<P, R> extends EventEmmiter implements ITask<P, R> {
     try {
       if (this.params) {
         this.result = await this.process.run(this.params);
+        delete this.params;
       } else {
         this.result = await this.process.run();
       }
