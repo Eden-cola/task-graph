@@ -121,7 +121,7 @@ export class ReleaseMemoryPriorityTaskQueue extends PriorityTaskQueue {
     }
     return task.dependencies.reduce((sum, dTask) => {
       const processing = dTask.followers
-      .filter(fTask => fTask.isFailed() || fTask.isSucceed())
+      .filter(fTask => !fTask.isFailed() && !fTask.isSucceed())
       .length;
       //27720常数用于优化processing<=12的场景，可以使权重尽量准确
       if (processing <= 12) {
